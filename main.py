@@ -1,59 +1,41 @@
-import os
 from fastapi import FastAPI, Query, UploadFile, File
 from typing import Annotated
 from strands import Agent
-from strands.models.openai import OpenAIModel
-from dotenv import load_dotenv
-from prompts import REQUIREMENT_ANALYZER_PROMPT, CODE_GENERATOR_PROMPT, CODE_REVIEWER_PROMPT    
 from schema.spec_to_code_schema import SpecToCodeResponse, RequirementAnalysis, CodeGenerationResult, CodeReviewResult
 from strands.multiagent import GraphBuilder
-from pathlib import Path
-load_dotenv()
+from tools import query_product_database
+from models_providers import ModelProvider
+from utils import needs_revision, load_prompt
 
 
 app = FastAPI()
 
+@app.post("/single-agent-tool")
+async def single_agent_tool(
+    content: Annotated[str, Query(..., min_length=1, max_length=15000)]
+):
+    model_provider = ModelProvider().mercury()
+
+    code_agent = Agent(
+        model=model_provider,
+        system_prompt=load_prompt("product_assistance.md"),
+        tools=[
+            query_product_database
+        ]
+    )
+
+    result = code_agent(content)
+
+    return result
+
 @app.post("/single-agent")
 async def single_agent(content: Annotated[str, Query(..., min_length=1, max_length=15000)]):
 
-    model = OpenAIModel(
-        client_args={
-            "api_key": os.environ["INCEPTION_API_KEY"],       # or pull from env
-            "base_url": "https://api.inceptionlabs.ai/v1",
-        },
-        model_id="mercury-3",
-    )
+    model_provider = ModelProvider().mercury()
 
     code_agent = Agent(
-        model=model,
-        system_prompt="""
-        You are a senior Python developer.
-
-        Given a software specification:
-        1. Analyze the requirement.
-        2. Generate Python code.
-        3. Review your own implementation.
-        4. Mention potential issues.
-
-
-        Return:
-        - File structure
-        - File paths
-        - Code content which is contains pure code without any explanations or comments
-        - Implementation assumptions
-
-        Example output:
-
-        {
-        "files": [
-            {
-            "path": "",
-            "content": ""
-            }
-        ],
-        "assumptions": []
-        }
-        """, structured_output_model=SpecToCodeResponse)
+        model=model_provider,
+        system_prompt=load_prompt("spec_to_code_single_agent.md"), structured_output_model=SpecToCodeResponse)
     result = code_agent(f"Content: {content}") 
     return result
 
@@ -61,17 +43,11 @@ async def single_agent(content: Annotated[str, Query(..., min_length=1, max_leng
 @app.post("/multi-agent")
 async def multi_agent(content: Annotated[str, Query(..., min_length=1, max_length=15000)]):
 
-    model = OpenAIModel(
-        client_args={
-            "api_key": os.environ["INCEPTION_API_KEY"],       # or pull from env
-            "base_url": "https://api.inceptionlabs.ai/v1",
-        },
-        model_id="mercury-3",
-    )
+    model_provider = ModelProvider().mercury()
 
-    requirement_analyzer_agent = Agent(model=model, system_prompt=load_prompt("requirement_analyzer.md"), structured_output_model=RequirementAnalysis)
-    code_generator_agent = Agent(model=model, system_prompt=load_prompt("code_generator.md"), structured_output_model=CodeGenerationResult)
-    code_reviewer_agent = Agent(model=model, system_prompt=load_prompt("code_reviewer.md"), structured_output_model=CodeReviewResult)
+    requirement_analyzer_agent = Agent(model=model_provider, system_prompt=load_prompt("requirement_analyzer.md"), structured_output_model=RequirementAnalysis)
+    code_generator_agent = Agent(model=model_provider, system_prompt=load_prompt("code_generator.md"), structured_output_model=CodeGenerationResult)
+    code_reviewer_agent = Agent(model=model_provider, system_prompt=load_prompt("code_reviewer.md"), structured_output_model=CodeReviewResult)
 
 
     builder = GraphBuilder()
@@ -107,15 +83,15 @@ async def multi_agent(content: Annotated[str, Query(..., min_length=1, max_lengt
     }
 
 
-def needs_revision(state) -> bool:
-    review_result = state.results.get("code_review")
-    if review_result is None:
-        return False
-    return review_result.result.structured_output.review_status not in ("approved", "passed")
+# def needs_revision(state) -> bool:
+#     review_result = state.results.get("code_review")
+#     if review_result is None:
+#         return False
+#     return review_result.result.structured_output.review_status not in ("approved", "passed")
 
 
-def load_prompt(filename):
-    return Path(
-        f"prompts/{filename}"
-    ).read_text(encoding="utf-8")
+# def load_prompt(filename):
+#     return Path(
+#         f"prompts/{filename}"
+#     ).read_text(encoding="utf-8")
 
