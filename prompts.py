@@ -23,7 +23,6 @@ Example output:
   "feature": "",
   "functional_requirements": [],
   "entities": [],
-  "api_requirements": [],
   "business_rules": [],
   "constraints": [],
   "ambiguities": []
@@ -54,7 +53,6 @@ Return:
 - File structure
 - File paths
 - Code content which is contains pure code without any explanations or comments
-- Implementation assumptions
 
 Example output:
 
@@ -62,10 +60,9 @@ Example output:
   "files": [
     {
       "path": "",
-      "content": ""
+      "content": "",
     }
-  ],
-  "assumptions": []
+  ]
 }
 """
 
