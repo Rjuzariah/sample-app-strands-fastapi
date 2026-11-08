@@ -65,33 +65,12 @@ async def multi_agent(content: Annotated[str, Query(..., min_length=1, max_lengt
 
     builder.set_execution_timeout(600)
     graph = builder.build()
-    result = graph(f"Content: {content}")
-
-    # print(result.execution_order)
-    print("execution_count", result.execution_count)
-    print("completed nodes", result.completed_nodes)
-    print("failed nodes",result.failed_nodes)
-    
+    result = graph(f"Content: {content}")    
 
     return {
         "status": result.status,
         "requirement_analysis": result.results["requirement_analysis"].result.structured_output.model_dump(),
         "code_generation": result.results["code_generation"].result.structured_output.model_dump(),
         "code_review": result.results["code_review"].result.structured_output.model_dump(),
-        # "accumulated_usage": result.accumulated_usage,
-        "all": result.to_dict()
+        "accumulated_usage": result.accumulated_usage,
     }
-
-
-# def needs_revision(state) -> bool:
-#     review_result = state.results.get("code_review")
-#     if review_result is None:
-#         return False
-#     return review_result.result.structured_output.review_status not in ("approved", "passed")
-
-
-# def load_prompt(filename):
-#     return Path(
-#         f"prompts/{filename}"
-#     ).read_text(encoding="utf-8")
-

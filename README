@@ -1,0 +1,74 @@
+# Sample AI FastAPI with Strands
+
+A simple FastAPI application demonstrating a multi-agent workflow using **Strands Agents**.
+
+## Prerequisites
+
+- Python 3.10+
+- Git
+- Virtual Environment (recommended)
+
+## Clone Repository
+
+```bash
+git clone <repository-url>
+cd <repository-folder>
+```
+
+## Create Virtual Environment
+
+### Windows
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+### Linux / macOS
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+## Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## Environment Variables
+
+Create a `.env` file in the project root.
+
+Example:
+
+```env
+INCEPTION_API_KEY=your_api_key_here
+```
+
+## Run the Application
+
+```bash
+uv run fastapi dev
+```
+
+
+The API will be available at:
+
+```
+http://127.0.0.1:8000
+```
+
+Interactive API documentation:
+
+```
+http://127.0.0.1:8000/docs
+```
+
+
+## Notes
+
+- Ensure your API key is valid before running the application.
+- Never commit your `.env` file or API keys to version control.
+- Install dependencies inside the virtual environment before starting the application.
